@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
 from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 
 # draw a region
@@ -26,32 +27,89 @@ def get_offset_circles(center1, center2, radius1, radius2, num_samples):
     offset_circles_coords = np.concatenate((circle1_coords, circle2_coords), axis=0)
 
     return offset_circles_coords
+	
+	
+def get_region_boundary(num_samples):
+
+	offset_circles_coords = get_offset_circles((1,0),(0,0),5,2,num_samples)
+	
+	return offset_circles_coords
    
 
 def apply_to_coords(coords, func):
 
-    n_rows = np.shape(coords)[0]
-    zs = np.apply_along_axis(func, 1, coords).reshape(n_rows,1)
-    xyzs = np.concatenate((coords,zs), axis=1).reshape(n_rows,3)
+    zs = np.apply_along_axis(func, 1, coords).reshape(-1,1)
 
-    return xyzs
+    return zs
+	
+	
+def phi(xy):
+    
+	x = xy[0]
+	y = xy[1]
+    
+	temp = x**2 + y + 10
+	
+	return temp
+	
 
 
-def data_to_polygon(data, ref_height, color, alpha):
+def data_to_polygon(dU, boundary_values, ref_height, color, alpha):
 
-    xs = data[:,0]
-    ys = data[:,1]
-    zs = data[:,2]
+    xs = dU[:,0]
+    ys = dU[:,1]
+    zs = boundary_values
 
     v = []
     for k in range(0, len(xs) - 1):
         x = [xs[k], xs[k+1], xs[k+1], xs[k]]
         y = [ys[k], ys[k+1], ys[k+1], ys[k]]
         z = [zs[k], zs[k+1], ref_height, ref_height]
-        v.append(list(zip(x, y, z))) 
-    poly3dCollection = Poly3DCollection(v, color=color, alpha=alpha)
-    
+        v.append(list(zip(x, y, z)))
+		
+    poly3dCollection = Poly3DCollection(v)
+    poly3dCollection.set_alpha(alpha)
+    poly3dCollection.set_facecolor(color)
+
     return poly3dCollection
+	
+	
+def plot_region_and_boundary_condition(dU, boundary_values, num_samples):
+	
+	# set up plot
+	fig = plt.figure(figsize=(10,6))
+	ax = fig.add_subplot(111, projection='3d')
+	
+	# region
+	ax.add_collection3d(plt.fill_between(dU[:,0], dU[:,1], 0, color='lightsteelblue', linewidth=0))
+	
+	# region boundary
+	ax.plot(xs=dU[0:num_samples,0], ys=dU[0:num_samples,1], zs=0, color='slateblue', zorder=10, linewidth=2)
+	ax.plot(xs=dU[num_samples:,0], ys=dU[num_samples:,1], zs=0, color='slateblue', zorder=10, linewidth=2)
+	
+	# vertical shading
+	ax.add_collection3d(data_to_polygon(dU[0:num_samples,:], boundary_values[0:num_samples], 0, 'r', 0.5))
+	ax.add_collection3d(data_to_polygon(dU[num_samples:,:], boundary_values[num_samples:,:], 0, 'r', 0.5))
+	
+	# phi values
+	ax.plot(xs=dU[0:num_samples,0], ys=dU[0:num_samples,1], zs=boundary_values[0:num_samples,0], color='r', zorder=10, linewidth=2)
+	ax.plot(xs=dU[num_samples:,0], ys=dU[num_samples:,1], zs=boundary_values[num_samples:,0], color='r', zorder=10, linewidth=2)
+	
+	# axis limits
+	ax.set_xlim([-4,6])
+	ax.set_ylim([-5,5])
+	ax.set_zlim([0,40])
+	plt.axis('off')
+	
+	# viewpoint
+	ax.view_init(elev=60, azim=250)
+
+	plt.show()
+	
+	return
+	
+	
+	
 
 # simulate one-dimensional BM
 
