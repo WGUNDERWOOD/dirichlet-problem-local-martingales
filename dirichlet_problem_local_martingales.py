@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 
 # draw a region
 
@@ -34,6 +35,23 @@ def apply_to_coords(coords, func):
     xyzs = np.concatenate((coords,zs), axis=1).reshape(n_rows,3)
 
     return xyzs
+
+
+def data_to_polygon(data, ref_height, color, alpha):
+
+    xs = data[:,0]
+    ys = data[:,1]
+    zs = data[:,2]
+
+    v = []
+    for k in range(0, len(xs) - 1):
+        x = [xs[k], xs[k+1], xs[k+1], xs[k]]
+        y = [ys[k], ys[k+1], ys[k+1], ys[k]]
+        z = [zs[k], zs[k+1], ref_height, ref_height]
+        v.append(list(zip(x, y, z))) 
+    poly3dCollection = Poly3DCollection(v, color=color, alpha=alpha)
+    
+    return poly3dCollection
 
 # simulate one-dimensional BM
 
