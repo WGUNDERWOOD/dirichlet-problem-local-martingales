@@ -30,9 +30,9 @@ def get_offset_circles(center1, center2, radius1, radius2, num_samples):
 
 def get_region_boundary(num_samples):
 
-	offset_circles_coords = get_offset_circles((1,0),(0,0),5,2,num_samples)
+    offset_circles_coords = get_offset_circles((1,0),(0,0),5,2,num_samples)
 
-	return offset_circles_coords
+    return offset_circles_coords
 
 
 def apply_to_coords(coords, func):
@@ -44,12 +44,12 @@ def apply_to_coords(coords, func):
 
 def phi(xy):
 
-	x = xy[0]
-	y = xy[1]
+    x = xy[0]
+    y = xy[1]
 
-	temp = x**2 + y + 10
+    temp = x**2 + y + 10
 
-	return temp
+    return temp
 
 
 
@@ -75,42 +75,42 @@ def data_to_polygon(dU, boundary_values, ref_height, color, alpha):
 
 def plot_region_and_boundary_condition(dU, boundary_values, num_samples):
 
-	# set up plot
-	fig = plt.figure(figsize=(5,3))
-	ax = fig.add_subplot(111, projection='3d')
+    # set up plot
+    fig = plt.figure(figsize=(5,3))
+    ax = fig.add_subplot(111, projection='3d')
 
-	# region
-	ax.add_collection3d(plt.fill_between(dU[:,0], dU[:,1], 0, color='lightsteelblue', linewidth=0))
+    # region
+    ax.add_collection3d(plt.fill_between(dU[:,0], dU[:,1], 0, color='lightsteelblue', linewidth=0))
 
-	# vertical shading
-	ax.add_collection3d(data_to_polygon(dU[0:num_samples,:], boundary_values[0:num_samples], 0, 'r', 0.5))
-	ax.add_collection3d(data_to_polygon(dU[num_samples:,:], boundary_values[num_samples:,:], 0, 'r', 0.5))
+    # vertical shading
+    ax.add_collection3d(data_to_polygon(dU[0:num_samples,:], boundary_values[0:num_samples], 0, 'r', 0.5))
+    ax.add_collection3d(data_to_polygon(dU[num_samples:,:], boundary_values[num_samples:,:], 0, 'r', 0.5))
 
-	# region boundary
-	ax.plot(xs=dU[0:num_samples,0], ys=dU[0:num_samples,1], zs=0, color='slateblue', linewidth=2, zorder=4)
-	ax.plot(xs=dU[num_samples:,0], ys=dU[num_samples:,1], zs=0, color='slateblue', linewidth=2, zorder=4)
+    # region boundary
+    ax.plot(xs=dU[0:num_samples,0], ys=dU[0:num_samples,1], zs=0, color='slateblue', linewidth=2, zorder=4)
+    ax.plot(xs=dU[num_samples:,0], ys=dU[num_samples:,1], zs=0, color='slateblue', linewidth=2, zorder=4)
 
-	# phi values
-	ax.plot(xs=dU[0:num_samples,0], ys=dU[0:num_samples,1], zs=boundary_values[0:num_samples,0], color='r', linewidth=2, zorder=5)
-	ax.plot(xs=dU[num_samples:,0], ys=dU[num_samples:,1], zs=boundary_values[num_samples:,0], color='r', linewidth=2, zorder=5)
+    # phi values
+    ax.plot(xs=dU[0:num_samples,0], ys=dU[0:num_samples,1], zs=boundary_values[0:num_samples,0], color='r', linewidth=2, zorder=5)
+    ax.plot(xs=dU[num_samples:,0], ys=dU[num_samples:,1], zs=boundary_values[num_samples:,0], color='r', linewidth=2, zorder=5)
 
-	# text
-	ax.text(x=3.8, y=0, z=0, s='$U$', fontsize=20, zorder=6)
-	ax.text(x=2, y=-5.7, z=0, s='$\partial U$', fontsize=20, zorder=6)
-	ax.text(x=-3, y=7.5, z=0, s='$\phi(\partial U)$', fontsize=20, zorder=6)
+    # text
+    ax.text(x=3.8, y=0, z=0, s='$U$', fontsize=20, zorder=6)
+    ax.text(x=2, y=-5.7, z=0, s='$\partial U$', fontsize=20, zorder=6)
+    ax.text(x=-3, y=7.5, z=0, s='$\phi(\partial U)$', fontsize=20, zorder=6)
 
-	# axis limits
-	ax.set_xlim([-4,6])
-	ax.set_ylim([-5,5])
-	ax.set_zlim([0,40])
-	plt.axis('off')
+    # axis limits
+    ax.set_xlim([-4,6])
+    ax.set_ylim([-5,5])
+    ax.set_zlim([0,40])
+    plt.axis('off')
 
-	# viewpoint
-	ax.view_init(elev=60, azim=250)
+    # viewpoint
+    ax.view_init(elev=60, azim=250)
 
-	plt.show()
+    plt.show()
 
-	return
+    return
 
 
 
@@ -119,13 +119,14 @@ def plot_region_and_boundary_condition(dU, boundary_values, num_samples):
 
 def sim_bm(x, T, num_samples):
 
-	mesh_size = T/num_samples
-	sd = np.sqrt(mesh_size)
+    mesh_size = T/num_samples
+    sd = np.sqrt(mesh_size)
 
-	normal_vec = np.random.normal(loc=0, scale=sd, size=num_samples)
-	normal_vec[0] = normal_vec[0] + x
-	bm = np.cumsum(normal_vec)
-	return bm
+    normal_vec = np.random.normal(loc=0, scale=sd, size=num_samples)
+    normal_vec[0] = normal_vec[0] + x
+    bm = np.cumsum(normal_vec)
+
+    return bm
 
 
 # simulate two-dimensional BM
@@ -142,47 +143,75 @@ def sim_2d_bm(xy, T, num_samples):
 
 def inside_U(xy):
 
-	x = xy[0]
-	y = xy[1]
+    x = xy[0]
+    y = xy[1]
 
-	if (x-1)**2 + y**2 >= 25:
-		return False
-	elif x**2 + y**2 <= 4:
-		return False
-	else:
-		return True
+    if (x-1)**2 + y**2 >= 25:
+        return False
 
+    elif x**2 + y**2 <= 4:
+        return False
+
+    else:
+        return True
+
+def terminal_value(bm_2d):
+
+    terminal_point = bm_2d[-1]
+    terminal_val = phi(terminal_point)
+
+    return terminal_val
 
 
 def up_to_escape(bm_2d):
 
-	still_in_U = np.apply_along_axis(inside_U, 1, bm_2d)
+    still_in_U = np.apply_along_axis(inside_U, 1, bm_2d)
 
-	last_time_before_escape = list(still_in_U).index(False)
-	bm_up_to_escape = bm_2d[0:(last_time_before_escape + 1)]
+    last_time_before_escape = list(still_in_U).index(False)
+    bm_up_to_escape = bm_2d[0:(last_time_before_escape + 1)]
 
-	return bm_up_to_escape
+    return bm_up_to_escape
 
 
 def plot_single_bm_path(dU, T, num_samples):
 
-	bm_2 = sim_2d_bm((3.5,0), T=10, num_samples=100)
+    bm_2 = sim_2d_bm((3.5,0), T=10, num_samples=100)
 
-	fig = plt.figure(figsize=(10,10))
-	ax = fig.add_subplot(111)
+    fig = plt.figure(figsize=(5, 5))
+    ax = fig.add_subplot(111)
 
-	# region
-	plt.fill_between(dU[:,0], dU[:,1], linewidth=0, color='lightsteelblue')
+    # region
+    plt.fill_between(dU[:,0], dU[:,1], linewidth=0, color='lightsteelblue')
 
-	# boundary
-	ax.plot(dU[0:num_samples,0], dU[0:num_samples,1], color='slateblue', linewidth=2, zorder=2)
-	ax.plot(dU[num_samples:,0], dU[num_samples:,1], color='slateblue', linewidth=2, zorder=2)
+    # boundary
+    ax.plot(dU[0:num_samples,0], dU[0:num_samples,1], color='slateblue', linewidth=2, zorder=2)
+    ax.plot(dU[num_samples:,0], dU[num_samples:,1], color='slateblue', linewidth=2, zorder=2)
 
-	# bm
-	B = sim_2d_bm((3,0), T, 10000)
-	B = up_to_escape(B)
-	ax.plot(B[:,0],B[:,1], linewidth=0.5)
+    # bm
+    B = sim_2d_bm((3,0), T, 10000)
+    B = up_to_escape(B)
+    ax.plot(B[:,0],B[:,1], linewidth=0.5)
 
-	plt.show()
+    # escape value
+    escape_val = terminal_value(B)
+
+    print(escape_val)
+
+    plt.show()
 
 
+def simulate_many_bms(xy, M, T, num_samples):
+
+    values = M*[None]
+
+    for m in range(M):
+        bm = sim_2d_bm(xy, T, num_samples)
+        escape_value = terminal_value(up_to_escape(bm))
+        values[m] = escape_value
+
+    mean_value = np.mean(values)
+
+    return mean_value
+
+
+def simulate_all_points():
