@@ -214,4 +214,4 @@ def simulate_many_bms(xy, M, T, num_samples):
     return mean_value
 
 
-def simulate_all_points():
+#def simulate_all_points():
