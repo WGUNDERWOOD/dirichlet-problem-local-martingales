@@ -16,6 +16,7 @@ def get_circle(center, radius, num_samples):
 
     return circle_coords
 
+
 def get_offset_circles(center1, center2, radius1, radius2, num_samples):
 
     circle1_coords = get_circle(center1, radius1, num_samples)
@@ -50,7 +51,6 @@ def phi(xy):
     temp = x**2 + y + 10
 
     return temp
-
 
 
 def data_to_polygon(dU, boundary_values, ref_height, color, alpha):
@@ -154,6 +154,7 @@ def inside_U(xy):
 
     else:
         return True
+
 
 def terminal_value(bm_2d):
 
