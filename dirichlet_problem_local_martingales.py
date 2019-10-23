@@ -48,15 +48,13 @@ def phi(xy):
     x = xy[0]
     y = xy[1]
 
-    temp = x**2 + y + 10
-
-    return temp
+    return x**2 + y + 10
 
 
-def data_to_polygon(dU, boundary_values, ref_height, color, alpha):
+def data_to_polygon(boundary_coords, boundary_values, ref_height, color, alpha):
 
-    xs = dU[:,0]
-    ys = dU[:,1]
+    xs = boundary_coords[:,0]
+    ys = boundary_coords[:,1]
     zs = boundary_values
 
     v = []
@@ -73,49 +71,9 @@ def data_to_polygon(dU, boundary_values, ref_height, color, alpha):
     return poly3dCollection
 
 
-def plot_region_and_boundary_condition(dU, boundary_values, num_samples):
-
-    # set up plot
-    fig = plt.figure(figsize=(5,3))
-    ax = fig.add_subplot(111, projection='3d')
-
-    # region
-    ax.add_collection3d(plt.fill_between(dU[:,0], dU[:,1], 0, color='lightsteelblue', linewidth=0))
-
-    # vertical shading
-    ax.add_collection3d(data_to_polygon(dU[0:num_samples,:], boundary_values[0:num_samples], 0, 'r', 0.5))
-    ax.add_collection3d(data_to_polygon(dU[num_samples:,:], boundary_values[num_samples:,:], 0, 'r', 0.5))
-
-    # region boundary
-    ax.plot(xs=dU[0:num_samples,0], ys=dU[0:num_samples,1], zs=0, color='slateblue', linewidth=2, zorder=4)
-    ax.plot(xs=dU[num_samples:,0], ys=dU[num_samples:,1], zs=0, color='slateblue', linewidth=2, zorder=4)
-
-    # phi values
-    ax.plot(xs=dU[0:num_samples,0], ys=dU[0:num_samples,1], zs=boundary_values[0:num_samples,0], color='r', linewidth=2, zorder=5)
-    ax.plot(xs=dU[num_samples:,0], ys=dU[num_samples:,1], zs=boundary_values[num_samples:,0], color='r', linewidth=2, zorder=5)
-
-    # text
-    ax.text(x=3.8, y=0, z=0, s='$U$', fontsize=20, zorder=6)
-    ax.text(x=2, y=-5.7, z=0, s='$\partial U$', fontsize=20, zorder=6)
-    ax.text(x=-3, y=7.5, z=0, s='$\phi(\partial U)$', fontsize=20, zorder=6)
-
-    # axis limits
-    ax.set_xlim([-4,6])
-    ax.set_ylim([-5,5])
-    ax.set_zlim([0,40])
-    plt.axis('off')
-
-    # viewpoint
-    ax.view_init(elev=60, azim=250)
-
-    plt.show()
-
-    return
 
 
-
-
-# simulate one-dimensional BM
+# simulate BM
 
 def sim_bm(x, T, num_samples):
 
@@ -128,8 +86,6 @@ def sim_bm(x, T, num_samples):
 
     return bm
 
-
-# simulate two-dimensional BM
 
 def sim_2d_bm(xy, T, num_samples):
 
@@ -174,33 +130,6 @@ def up_to_escape(bm_2d):
     return bm_up_to_escape
 
 
-def plot_single_bm_path(dU, T, num_samples):
-
-    bm_2 = sim_2d_bm((3.5,0), T=10, num_samples=100)
-
-    fig = plt.figure(figsize=(5, 5))
-    ax = fig.add_subplot(111)
-
-    # region
-    plt.fill_between(dU[:,0], dU[:,1], linewidth=0, color='lightsteelblue')
-
-    # boundary
-    ax.plot(dU[0:num_samples,0], dU[0:num_samples,1], color='slateblue', linewidth=2, zorder=2)
-    ax.plot(dU[num_samples:,0], dU[num_samples:,1], color='slateblue', linewidth=2, zorder=2)
-
-    # bm
-    B = sim_2d_bm((3,0), T, 10000)
-    B = up_to_escape(B)
-    ax.plot(B[:,0],B[:,1], linewidth=0.5)
-
-    # escape value
-    escape_val = terminal_value(B)
-
-    print(escape_val)
-
-    plt.show()
-
-
 def simulate_many_bms(xy, M, T, num_samples):
 
     values = M*[None]
@@ -216,3 +145,116 @@ def simulate_many_bms(xy, M, T, num_samples):
 
 
 #def simulate_all_points():
+
+
+
+# plots
+
+def plot_region_and_boundary_condition(boundary_coords, boundary_values, num_samples):
+
+    # set up plot
+    fig = plt.figure(figsize=(5,3))
+    ax = fig.add_subplot(111, projection='3d')
+
+    # region
+    ax.add_collection3d(plt.fill_between(boundary_coords[:,0], boundary_coords[:,1], 0, color='lightsteelblue', linewidth=0))
+
+    # vertical shading
+    ax.add_collection3d(data_to_polygon(boundary_coords[0:num_samples,:], boundary_values[0:num_samples], 0, 'r', 0.5))
+    ax.add_collection3d(data_to_polygon(boundary_coords[num_samples:,:], boundary_values[num_samples:,:], 0, 'r', 0.5))
+
+    # region boundary
+    ax.plot(xs=boundary_coords[0:num_samples,0], ys=boundary_coords[0:num_samples,1], zs=0, color='slateblue', linewidth=2, zorder=4)
+    ax.plot(xs=boundary_coords[num_samples:,0], ys=boundary_coords[num_samples:,1], zs=0, color='slateblue', linewidth=2, zorder=4)
+
+    # phi values
+    ax.plot(xs=boundary_coords[0:num_samples,0], ys=boundary_coords[0:num_samples,1], zs=boundary_values[0:num_samples,0], color='r', linewidth=2, zorder=5)
+    ax.plot(xs=boundary_coords[num_samples:,0], ys=boundary_coords[num_samples:,1], zs=boundary_values[num_samples:,0], color='r', linewidth=2, zorder=5)
+
+    # text
+    ax.text(x=3.8, y=0, z=0, s='$U$', fontsize=20, zorder=6)
+    ax.text(x=2, y=-5.7, z=0, s='$\partial U$', fontsize=20, zorder=6)
+    ax.text(x=-3, y=7.5, z=0, s='$\phi(\partial U)$', fontsize=20, zorder=6)
+
+    # axis limits
+    ax.set_xlim([-4,6])
+    ax.set_ylim([-5,5])
+    ax.set_zlim([0,40])
+    plt.axis('off')
+
+    # viewpoint
+    ax.view_init(elev=60, azim=250)
+
+    plt.show()
+
+    return
+
+
+def plot_single_bm_path(boundary_coords, T, num_samples):
+
+    bm_2 = sim_2d_bm((3.5,0), T=10, num_samples=100)
+
+    fig = plt.figure(figsize=(5, 5))
+    ax = fig.add_subplot(111)
+
+    # region
+    plt.fill_between(boundary_coords[:,0], boundary_coords[:,1], linewidth=0, color='lightsteelblue')
+
+    # boundary
+    ax.plot(boundary_coords[0:num_samples,0], boundary_coords[0:num_samples,1], color='slateblue', linewidth=2, zorder=2)
+    ax.plot(boundary_coords[num_samples:,0], boundary_coords[num_samples:,1], color='slateblue', linewidth=2, zorder=2)
+
+    # bm
+    B = sim_2d_bm((3,0), T, 10000)
+    B = up_to_escape(B)
+    ax.plot(B[:,0],B[:,1], linewidth=0.5)
+
+    # escape value
+    escape_val = terminal_value(B)
+
+    print(escape_val)
+
+    plt.show()
+
+
+def plot_few_bm_paths(boundary_coords, boundary_values, num_samples):
+
+    # set up plot
+    fig = plt.figure(figsize=(5,3))
+    ax = fig.add_subplot(111, projection='3d')
+
+    # region
+    ax.add_collection3d(plt.fill_between(boundary_coords[:,0], boundary_coords[:,1], 0, color='lightsteelblue', linewidth=0))
+
+    # vertical shading
+    ax.add_collection3d(data_to_polygon(boundary_coords[0:num_samples,:], boundary_values[0:num_samples], 0, 'r', 0.5))
+    ax.add_collection3d(data_to_polygon(boundary_coords[num_samples:,:], boundary_values[num_samples:,:], 0, 'r', 0.5))
+
+    # region boundary
+    ax.plot(xs=boundary_coords[0:num_samples,0], ys=boundary_coords[0:num_samples,1], zs=0, color='slateblue', linewidth=2, zorder=4)
+    ax.plot(xs=boundary_coords[num_samples:,0], ys=boundary_coords[num_samples:,1], zs=0, color='slateblue', linewidth=2, zorder=4)
+
+    # phi values
+    ax.plot(xs=boundary_coords[0:num_samples,0], ys=boundary_coords[0:num_samples,1], zs=boundary_values[0:num_samples,0], color='r', linewidth=2, zorder=5)
+    ax.plot(xs=boundary_coords[num_samples:,0], ys=boundary_coords[num_samples:,1], zs=boundary_values[num_samples:,0], color='r', linewidth=2, zorder=5)
+
+    # BMs
+
+
+    # text
+    ax.text(x=3.8, y=0, z=0, s='$U$', fontsize=20, zorder=6)
+    ax.text(x=2, y=-5.7, z=0, s='$\partial U$', fontsize=20, zorder=6)
+    ax.text(x=-3, y=7.5, z=0, s='$\phi(\partial U)$', fontsize=20, zorder=6)
+
+    # axis limits
+    ax.set_xlim([-4,6])
+    ax.set_ylim([-5,5])
+    ax.set_zlim([0,40])
+    plt.axis('off')
+
+    # viewpoint
+    ax.view_init(elev=60, azim=250)
+
+    plt.show()
+
+    return
