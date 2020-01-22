@@ -1,0 +1,6 @@
+* figures
+** region (2d)
+** region and boundary condition (3d)
+** several bms in region (2d)
+** several bms in region with boundary condition and escape and averaged values (3d)
+** reconstructed surface at several accuracies (3d)
