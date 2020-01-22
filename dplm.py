@@ -144,13 +144,16 @@ def simulate_many_bms(xy, M, T, num_samples):
     return mean_value
 
 
-#def simulate_all_points():
 
 
 
 # plots
 
-def plot_region_and_boundary_condition(boundary_coords, boundary_values, num_samples):
+def plot_region_and_boundary_condition():
+
+    num_samples = 50
+    boundary_coords = get_region_boundary(num_samples)
+    boundary_values = apply_to_coords(boundary_coords, phi)
 
     # set up plot
     fig = plt.figure(figsize=(5,3))
@@ -185,7 +188,7 @@ def plot_region_and_boundary_condition(boundary_coords, boundary_values, num_sam
     # viewpoint
     ax.view_init(elev=60, azim=250)
 
-    plt.show()
+    plt.savefig("plot_region_and_boundary_condition.png")
 
     return
 
