@@ -125,7 +125,7 @@ def up_to_escape(bm_2d):
     still_in_U = np.apply_along_axis(inside_U, 1, bm_2d)
 
     last_time_before_escape = list(still_in_U).index(False)
-    bm_up_to_escape = bm_2d[0:(last_time_before_escape + 1)]
+    bm_up_to_escape = bm_2d[0:(last_time_before_escape)]
 
     return bm_up_to_escape
 
@@ -166,8 +166,14 @@ def plot_region():
     ax.plot(boundary_coords[0:num_samples,0], boundary_coords[0:num_samples,1], color='slateblue', linewidth=2, zorder=2)
     ax.plot(boundary_coords[num_samples:,0], boundary_coords[num_samples:,1], color='slateblue', linewidth=2, zorder=2)
 
+    # text
+    ax.text(x=3.8, y=0, s='$U$', fontsize=20, zorder=6)
+    ax.text(x=2, y=-5.7, s='$\partial U$', fontsize=20, zorder=6)
+
+    # save
     plt.axis('off')
-    plt.savefig("./plot_region.png")
+    plt.savefig("./graphics/plot_region.png")
+
 
 def plot_region_and_boundary_condition():
 
@@ -208,39 +214,19 @@ def plot_region_and_boundary_condition():
     # viewpoint
     ax.view_init(elev=60, azim=250)
 
-    plt.savefig("plot_region_and_boundary_condition.png")
+    plt.savefig("./graphics/plot_region_and_boundary_condition.png")
 
     return
 
 
-def plot_single_bm_path(boundary_coords, T, num_samples):
+def plot_few_bm_paths():
 
-    bm_2 = sim_2d_bm((3.5,0), T=10, num_samples=100)
-
-    fig = plt.figure(figsize=(5, 5))
-    ax = fig.add_subplot(111)
-
-    # region
-    plt.fill_between(boundary_coords[:,0], boundary_coords[:,1], linewidth=0, color='lightsteelblue')
-
-    # boundary
-    ax.plot(boundary_coords[0:num_samples,0], boundary_coords[0:num_samples,1], color='slateblue', linewidth=2, zorder=2)
-    ax.plot(boundary_coords[num_samples:,0], boundary_coords[num_samples:,1], color='slateblue', linewidth=2, zorder=2)
-
-    # bm
-    B = sim_2d_bm((3,0), T, 10000)
-    B = up_to_escape(B)
-    ax.plot(B[:,0],B[:,1], linewidth=0.5)
-
-    # escape value
-    escape_val = terminal_value(B)
-
-    print(escape_val)
-
-    plt.show()
-
-
-def plot_few_bm_paths(boundary_coords, boundary_values, num_samples):
+    # get data
+    num_samples = 10000
+    boundary_coords = get_region_boundary(num_samples)
+    boundary_values = apply_to_coords(boundary_coords, phi)
+    x = (3,0)
+    T = 20
 
     # set up plot
     fig = plt.figure(figsize=(5,3))
@@ -262,6 +248,10 @@ def plot_few_bm_paths(boundary_coords, boundary_values, num_samples):
     ax.plot(xs=boundary_coords[num_samples:,0], ys=boundary_coords[num_samples:,1], zs=boundary_values[num_samples:,0], color='r', linewidth=2, zorder=5)
 
     # BMs
+    np.random.seed(seed=1)
+    for i in range(3):
+        bm = up_to_escape(sim_2d_bm(x, T, num_samples))
+        ax.plot(xs=bm[:,0], ys=bm[:,1], zorder=6, linewidth=0.5, color=['black','red','green'][i])
 
 
     # text
@@ -278,6 +268,6 @@ def plot_few_bm_paths(boundary_coords, boundary_values, num_samples):
     # viewpoint
     ax.view_init(elev=60, azim=250)
 
-    plt.show()
+    plt.savefig("./graphics/plot_few_bm_paths.png", dpi=1000)
 
     return
