@@ -149,6 +149,26 @@ def simulate_many_bms(xy, M, T, num_samples):
 
 # plots
 
+def plot_region():
+
+    # get data
+    num_samples = 50
+    boundary_coords = get_region_boundary(num_samples)
+
+    # set up plot
+    fig = plt.figure(figsize=(5, 5))
+    ax = fig.add_subplot(111)
+
+    # region
+    plt.fill_between(boundary_coords[:,0], boundary_coords[:,1], linewidth=0, color='lightsteelblue')
+
+    # boundary
+    ax.plot(boundary_coords[0:num_samples,0], boundary_coords[0:num_samples,1], color='slateblue', linewidth=2, zorder=2)
+    ax.plot(boundary_coords[num_samples:,0], boundary_coords[num_samples:,1], color='slateblue', linewidth=2, zorder=2)
+
+    plt.axis('off')
+    plt.savefig("./plot_region.png")
+
 def plot_region_and_boundary_condition():
 
     num_samples = 50
