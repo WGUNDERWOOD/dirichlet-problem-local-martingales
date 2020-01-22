@@ -250,9 +250,12 @@ def plot_few_bm_paths():
     # BMs
     np.random.seed(seed=1)
     for i in range(3):
+        col = ['black','red','green'][i]
         bm = up_to_escape(sim_2d_bm(x, T, num_samples))
-        ax.plot(xs=bm[:,0], ys=bm[:,1], zorder=6, linewidth=0.5, color=['black','red','green'][i])
-
+        end_x = np.array([bm[-1,0], bm[-1,0]])
+        end_y = np.array([bm[-1,1], bm[-1,1]])
+        ax.plot(xs=bm[:,0], ys=bm[:,1], zorder=6, linewidth=0.5, color=col)
+        ax.plot(end_x, end_y, 'ro', markersize=3, color=col, zorder=6)
 
     # text
     ax.text(x=3.8, y=0, z=0, s='$U$', fontsize=20, zorder=6)
