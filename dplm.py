@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
+from itertools import product
 from mpl_toolkits.mplot3d import Axes3D
 from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 
@@ -245,17 +246,21 @@ def plot_few_bm_paths():
 
     # phi values
     ax.plot(xs=boundary_coords[0:num_samples,0], ys=boundary_coords[0:num_samples,1], zs=boundary_values[0:num_samples,0], color='r', linewidth=2, zorder=5)
-    ax.plot(xs=boundary_coords[num_samples:,0], ys=boundary_coords[num_samples:,1], zs=boundary_values[num_samples:,0], color='r', linewidth=2, zorder=5)
+    ax.plot(xs=boundary_coords[num_samples:,0], ys=boundary_coords[num_samples:,1], zs=boundary_values[num_samples:,0], color='r', linewidth=2, zorder=7)
+
+    # start value
+    ax.plot([x[0]], [x[1]], 'ko', zorder=8, markersize=3)
 
     # BMs
-    np.random.seed(seed=1)
+    np.random.seed(seed=2)
     for i in range(3):
-        col = ['black','red','green'][i]
+        col = ['brown','red','green'][i]
         bm = up_to_escape(sim_2d_bm(x, T, num_samples))
-        end_x = np.array([bm[-1,0], bm[-1,0]])
-        end_y = np.array([bm[-1,1], bm[-1,1]])
-        ax.plot(xs=bm[:,0], ys=bm[:,1], zorder=6, linewidth=0.5, color=col)
-        ax.plot(end_x, end_y, 'ro', markersize=3, color=col, zorder=6)
+        xs = 2 * [bm[-1,0]]
+        ys = 2 * [bm[-1,1]]
+        zs = [0, terminal_value(bm)]
+        ax.plot(xs, ys, zs, '-o', markersize=3, zorder=8, linewidth=1, color=col)
+        ax.plot(bm[:,0], bm[:,1], zorder=6, linewidth=0.5, color=col)
 
     # text
     ax.text(x=3.8, y=0, z=0, s='$U$', fontsize=20, zorder=6)
@@ -274,3 +279,22 @@ def plot_few_bm_paths():
     plt.savefig("./graphics/plot_few_bm_paths.png", dpi=1000)
 
     return
+
+
+def plot_final_surface():
+
+    M = 10
+    T = 20
+    num_samples = 1000
+
+    x_scope = range(-5,5)
+    y_scope = range(-5,5)
+
+    mesh = product(x_scope, y_scope)
+
+    for xy in mesh:
+        print(xy)
+
+#    f_xy = simulate_many_bms(xy, M, T, num_samples)
+
+    print(f_xy)
