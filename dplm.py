@@ -235,7 +235,7 @@ def plot_region(n_draw_samples, dpi):
     ax.scatter(boundary_coords[:,0], boundary_coords[:,1], color='slateblue', linewidth=0, s=5, zorder=4, alpha=1)
 
     # text
-    ax.text(x=3.8, y=-0.3, s='$U$', fontsize=20, zorder=6)
+    ax.text(x=3.6, y=-0.4, s='$U$', fontsize=20, zorder=6)
     ax.text(x=4, y=-5, s='$\partial U$', fontsize=20, zorder=6)
 
     # save
@@ -271,9 +271,9 @@ def plot_region_and_boundary_condition(n_draw_samples, dpi):
     ax.add_collection3d(data_to_polygon(boundary_coords[n_draw_samples:,:], boundary_values[n_draw_samples:,:], 0, 'k', alpha=0.1))
 
     # text
-    ax.text(x=3.8, y=0, z=0, s='$U$', fontsize=20, zorder=6)
-    ax.text(x=2, y=-5.7, z=0, s='$\partial U$', fontsize=20, zorder=6)
-    ax.text(x=-3, y=7.5, z=0, s='$\phi(\partial U)$', fontsize=20, zorder=6)
+    ax.text(x=3.5, y=0, z=0, s='$U$', fontsize=20, zorder=6)
+    ax.text(x=4, y=-5, z=0, s='$\partial U$', fontsize=20, zorder=6)
+    ax.text(x=-1, y=8.5, z=2, s='$\phi(\partial U)$', fontsize=20, zorder=6)
 
     # axis limits
     ax.set_xlim([-4,6])
@@ -400,6 +400,6 @@ def plot_final_surface(n_monte_carlo, timestep, fidelity, total_time, n_draw_sam
     # viewpoint
     ax.view_init(elev=60, azim=250)
 
-    plt.savefig("./graphics/plot_final_surface.png", dpi=dpi)
+    plt.savefig("./graphics/plot_final_surface_M{}_f{}.png".format(n_monte_carlo, 100*fidelity), dpi=dpi)
 
     return
