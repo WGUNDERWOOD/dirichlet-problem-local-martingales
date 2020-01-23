@@ -78,28 +78,6 @@ def data_to_polygon(boundary_coords, boundary_values, ref_height, color, alpha):
 
 # simulate BM
 
-def sim_bm(x, T, num_samples):
-
-    mesh_size = T/num_samples
-    sd = np.sqrt(mesh_size)
-
-    normal_vec = np.random.normal(loc=0, scale=sd, size=num_samples)
-    normal_vec[0] = normal_vec[0] + x
-    bm = np.cumsum(normal_vec)
-
-    return bm
-
-
-def sim_2d_bm(xy, T, num_samples):
-
-    x_bm = sim_bm(xy[0], T, num_samples)
-    y_bm = sim_bm(xy[1], T, num_samples)
-
-    bm_2 = np.array([x_bm, y_bm]).T
-
-    return bm_2
-
-
 def inside_U(xy):
 
     x = xy[0]
@@ -125,12 +103,53 @@ def terminal_value(bm_2d):
 
 def up_to_escape(bm_2d):
 
+    # TODO remove
+
     still_in_U = np.apply_along_axis(inside_U, 1, bm_2d)
 
     last_time_before_escape = list(still_in_U).index(False)
-    bm_up_to_escape = bm_2d[0:(last_time_before_escape + 1)]
+    stopped_2d_bm = bm_2d
+    stopped_2d_bm[(last_time_before_escape+1):] = bm_2d[last_time_before_escape]
 
-    return bm_up_to_escape
+    return stopped_2d_bm
+
+
+def sim_many_2d_bms(xys, timestep, total_time):
+
+    # dim 0: which starting point
+    # dim 1: which time step
+    # dim 2: x or y
+
+    n_starts = len(xys)
+    n_steps = int(total_time / timestep)
+    sd = np.sqrt(timestep)
+
+    normal_array = np.random.normal(loc=0, scale=sd, size=(n_starts, n_steps, 2))
+    normal_array[:,0,:] = xys
+    many_2d_bms = np.cumsum(normal_array, axis=1)
+
+    return many_2d_bms
+
+
+def stop_2d_bm(bm_2d):
+
+    still_in_U = np.apply_along_axis(inside_U, 1, bm_2d)
+
+    last_time_before_escape = list(still_in_U).index(False)
+    stopped_2d_bm = bm_2d
+    stopped_2d_bm[(last_time_before_escape+1):] = bm_2d[last_time_before_escape]
+
+    return stopped_2d_bm
+
+
+def stop_many_2d_bms(many_2d_bms):
+
+    many_stopped_2d_bms = 0 * many_2d_bms
+
+    for i in range(len(many_2d_bms)):
+        many_stopped_2d_bms[i] = stop_2d_bm(many_2d_bms[i])
+
+    return many_stopped_2d_bms
 
 
 def simulate_many_bms(xy, M, T, num_samples):
