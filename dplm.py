@@ -6,9 +6,12 @@ from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 import matplotlib.cm as cm
 from matplotlib.colors import Normalize
 
-# draw a region
+# drawing
+# -----------------------------------------------------------------------------------
 
 def get_circle(center, radius, n_draw_samples):
+
+    '''get array of points forming a circle'''
 
     thetas = np.linspace(0, 2*np.pi, num=n_draw_samples, endpoint=True)
 
@@ -22,6 +25,8 @@ def get_circle(center, radius, n_draw_samples):
 
 def get_offset_circles(center1, center2, radius1, radius2, n_draw_samples):
 
+    '''get array of points forming two offset circles'''
+
     circle1_coords = get_circle(center1, radius1, n_draw_samples)
     circle2_coords = get_circle(center2, radius2, n_draw_samples)
 
@@ -32,14 +37,18 @@ def get_offset_circles(center1, center2, radius1, radius2, n_draw_samples):
     return offset_circles_coords
 
 
-def get_region_boundary(num_draw_samples):
+def get_region_boundary(n_draw_samples):
 
-    offset_circles_coords = get_offset_circles((1,0),(0,0),5,2,num_draw_samples)
+    '''get array of points for specific region U'''
+
+    offset_circles_coords = get_offset_circles((1,0), (0,0), 5, 2, n_draw_samples)
 
     return offset_circles_coords
 
 
 def apply_to_coords(coords, func):
+
+    '''apply a function pointwise to a list of coordinates'''
 
     zs = np.apply_along_axis(func, 1, coords).reshape(-1,1)
 
@@ -48,6 +57,8 @@ def apply_to_coords(coords, func):
 
 def phi(xy):
 
+    '''the boundary condition'''
+
     x = xy[0]
     y = xy[1]
 
@@ -55,6 +66,8 @@ def phi(xy):
 
 
 def data_to_polygon(boundary_coords, boundary_values, ref_height, color, alpha):
+
+    '''convert array of points to polygon for plotting'''
 
     xs = boundary_coords[:,0]
     ys = boundary_coords[:,1]
@@ -76,14 +89,17 @@ def data_to_polygon(boundary_coords, boundary_values, ref_height, color, alpha):
 
 
 
-# simulate BM
+# bm
+# -----------------------------------------------------------------------------------
 
-def escape_time(logical_points):
+def first_false(logical_values):
 
-    logical_points_list = list(logical_points)
+    '''get the first false entry in a logical list and return zero if there are none'''
 
-    if False in logical_points_list:
-        return logical_points_list.index(False)
+    logical_list = list(logical_values)
+
+    if False in logical_list:
+        return logical_list.index(False)
 
     else:
         return 0
@@ -91,15 +107,19 @@ def escape_time(logical_points):
 
 def stop_at_time(points, stop_time):
 
+    '''set all points after stop_time equal to the point at stop_time'''
+
     time = int(stop_time)
     stopped_points = np.zeros_like(points)
     stopped_points[0:time] = points[0:time]
-    stopped_points[time:] = points[time]
+    stopped_points[time:] = points[max(time-1,0)]
 
     return stopped_points
 
 
-def inside_U(xy):
+def inside_region(xy):
+
+    '''check if a point is inside the region'''
 
     x = xy[0]
     y = xy[1]
@@ -115,6 +135,8 @@ def inside_U(xy):
 
 
 def sim_bms(xys, timestep, total_time):
+
+    '''simulate bms started from each point in xys, run for total_time at time-granularity of timestep'''
 
     # dim 0: which starting point
     # dim 1: which time step
@@ -133,6 +155,8 @@ def sim_bms(xys, timestep, total_time):
 
 def stop_bms(bms):
 
+    '''stop a list of bms at their escape times'''
+
     xs = bms[:,:,0]
     ys = bms[:,:,1]
 
@@ -140,7 +164,7 @@ def stop_bms(bms):
     check_2 = (xs**2 + ys**2 > 4)
     points_inside = np.logical_and(check_1, check_2)
 
-    escape_times = np.apply_along_axis(escape_time, 1, points_inside).reshape(-1,1,1)
+    escape_times = np.apply_along_axis(first_false, 1, points_inside).reshape(-1,1,1)
     reshaped_times = np.concatenate((escape_times, escape_times), axis=2)
     bms_and_times = np.concatenate((bms, reshaped_times), axis=1)
 
@@ -154,30 +178,9 @@ def stop_bms(bms):
     return stopped_bms
 
 
-def stop_2d_bm(bm_2d):
-
-    still_in_U = np.apply_along_axis(inside_U, 1, bm_2d)
-
-    last_time_before_escape = list(still_in_U).index(False)
-    stopped_2d_bm = bm_2d
-    stopped_2d_bm[(last_time_before_escape+1):] = bm_2d[last_time_before_escape]
-
-    return stopped_2d_bm
-
-
-#def stop_bms(bms):
-#
-#    stopped_bms = np.zeros_like(bms)
-#    n_iter = len(bms)
-#
-#    for i in range(n_iter):
-#        print("{}/{}".format(i+1, n_iter))
-#        stopped_bms[i] = stop_2d_bm(bms[i])
-#
-#    return stopped_bms
-
-
 def terminal_values_stopped_bms(stopped_bms):
+
+    '''get the terminal values of a list of stopped bms'''
 
     term_vals = apply_to_coords(stopped_bms[:,-1,:], phi)
 
@@ -186,10 +189,12 @@ def terminal_values_stopped_bms(stopped_bms):
 
 def make_final_surface(n_monte_carlo, timestep, fidelity, total_time):
 
+    '''run sim bms started on a mesh, and get their expected terminal values'''
+
     x_scope = np.arange(-4,6, fidelity)
     y_scope = np.arange(-5,5, fidelity)
     xys = n_monte_carlo * list(product(x_scope, y_scope))
-    xys = [item for item in xys if inside_U(item)]
+    xys = [item for item in xys if inside_region(item)]
 
     bms = sim_bms(xys, timestep, total_time)
     stopped_bms = stop_bms(bms)
@@ -210,8 +215,11 @@ def make_final_surface(n_monte_carlo, timestep, fidelity, total_time):
 
 
 # plots
+# -----------------------------------------------------------------------------------
 
 def plot_region(n_draw_samples, dpi):
+
+    '''plot the region'''
 
     # get data
     boundary_coords = get_region_boundary(n_draw_samples)
@@ -236,6 +244,8 @@ def plot_region(n_draw_samples, dpi):
 
 
 def plot_region_and_boundary_condition(n_draw_samples, dpi):
+
+    '''plot the region and its boundary condition'''
 
     boundary_coords = get_region_boundary(n_draw_samples)
     boundary_values = apply_to_coords(boundary_coords, phi)
@@ -280,6 +290,8 @@ def plot_region_and_boundary_condition(n_draw_samples, dpi):
 
 
 def plot_few_bm_paths(n_draw_samples, timestep, total_time, dpi):
+
+    '''plot the region, boundary conditions and some bm sample paths'''
 
     # get data
     boundary_coords = get_region_boundary(n_draw_samples)
@@ -328,11 +340,6 @@ def plot_few_bm_paths(n_draw_samples, timestep, total_time, dpi):
         # bm paths
         ax.plot(stopped_bms[i,:,0], stopped_bms[i,:,1], zorder=6, linewidth=0.5, color=col)
 
-    # text
-    #ax.text(x=3.8, y=0, z=0, s='$U$', fontsize=20, zorder=6)
-    #ax.text(x=2, y=-5.7, z=0, s='$\partial U$', fontsize=20, zorder=6)
-    #ax.text(x=-3, y=7.5, z=0, s='$\phi(\partial U)$', fontsize=20, zorder=6)
-
     # axis limits
     ax.set_xlim([-4,6])
     ax.set_ylim([-5,5])
@@ -348,6 +355,8 @@ def plot_few_bm_paths(n_draw_samples, timestep, total_time, dpi):
 
 
 def plot_final_surface(n_monte_carlo, timestep, fidelity, total_time, n_draw_samples, dpi):
+
+    '''plot the estimated surface'''
 
     np.random.seed(seed=2)
 
@@ -382,11 +391,6 @@ def plot_final_surface(n_monte_carlo, timestep, fidelity, total_time, n_draw_sam
     cols = cmap(norm(surface[:,2]))
     ax.scatter(surface[:,0], surface[:,1], surface[:,2], linewidths=0, zorder=7, color=cols, s=5, alpha=1)
 
-    # text
-    #ax.text(x=3.8, y=0, z=0, s='$U$', fontsize=20, zorder=6)
-    #ax.text(x=2, y=-5.7, z=0, s='$\partial U$', fontsize=20, zorder=6)
-    #ax.text(x=-3, y=7.5, z=0, s='$\phi(\partial U)$', fontsize=20, zorder=6)
-
     # axis limits
     ax.set_xlim([-4,6])
     ax.set_ylim([-5,5])
@@ -397,3 +401,5 @@ def plot_final_surface(n_monte_carlo, timestep, fidelity, total_time, n_draw_sam
     ax.view_init(elev=60, azim=250)
 
     plt.savefig("./graphics/plot_final_surface.png", dpi=dpi)
+
+    return
