@@ -155,7 +155,12 @@ def make_final_surface(M, T, num_samples, fidelity):
 
     surface = []
 
+    n_iters = len(x_scope) * len(y_scope)
+    i = 1
+
     for xy in mesh:
+        print("make_final_surface: {}/{}".format(i, n_iters))
+        i = i+1
         if inside_U(xy):
             f_xy = simulate_many_bms(xy, M, T, num_samples)
             surface.append([xy[0], xy[1], f_xy])
@@ -304,7 +309,9 @@ def plot_final_surface():
     M = 10
     T = 50
     num_samples = 100
-    fidelity = 0.1
+    fidelity = 0.2
+
+    np.random.seed(seed=2)
 
     surface = make_final_surface(M, T, num_samples, fidelity)
     surface = np.array(surface)
@@ -335,7 +342,7 @@ def plot_final_surface():
     cmap = cm.autumn
     norm = Normalize(vmin=min(surface[:,2]), vmax=max(surface[:,2]))
     cols = cmap(norm(surface[:,2]))
-    ax.scatter(surface[:,0], surface[:,1], surface[:,2], linewidths=0, zorder=7, color=cols, s=0.5)
+    ax.scatter(surface[:,0], surface[:,1], surface[:,2], linewidths=0, zorder=7, color=cols, s=2)
 
     # text
     ax.text(x=3.8, y=0, z=0, s='$U$', fontsize=20, zorder=6)

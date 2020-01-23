@@ -6,3 +6,5 @@
 ** reconstructed surface at several accuracies (3d)
 * other
 ** make num_samples more descriptive
+** make boundary color depend on z value
+** sim bms in parallel
