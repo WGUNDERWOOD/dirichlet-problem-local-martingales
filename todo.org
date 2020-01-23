@@ -5,6 +5,7 @@
 ** several bms in region with boundary condition and escape and averaged values (3d)
 ** reconstructed surface at several accuracies (3d)
 * other
-** make num_samples more descriptive
-** make boundary color depend on z value
-** sim bms in parallel
+** functions should return
+** docs
+** try to shorten time horizon by checking for escape
+** stop bms in parallel

@@ -349,7 +349,7 @@ def plot_few_bm_paths(n_draw_samples, timestep, total_time, dpi):
     # viewpoint
     ax.view_init(elev=60, azim=250)
 
-    plt.savefig("./graphics/plot_few_bm_paths.png", dpi=1000)
+    plt.savefig("./graphics/plot_few_bm_paths.png", dpi=dpi)
 
     return
 
@@ -400,6 +400,6 @@ def plot_final_surface(n_monte_carlo, timestep, fidelity, total_time, n_draw_sam
     # viewpoint
     ax.view_init(elev=60, azim=250)
 
-    plt.savefig("./graphics/plot_final_surface_M{}_f{}.png".format(n_monte_carlo, 100*fidelity), dpi=dpi)
+    plt.savefig("./graphics/plot_final_surface_M{}_f{}.png".format(n_monte_carlo, int(100*fidelity)), dpi=dpi)
 
     return

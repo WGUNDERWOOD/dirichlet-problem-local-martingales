@@ -1,1 +1,22 @@
 python3 ./script.py
+
+convert ./graphics/plot_region.png -crop 8000x8000+1200+1100 ./graphics/plot_region_fmt.png
+convert ./graphics/plot_region_fmt.png -resize 800x800 ./graphics/plot_region_fmt.png
+
+convert ./graphics/plot_region_and_boundary_condition.png -crop 8000x8000+4500+2000 ./graphics/plot_region_and_boundary_condition_fmt.png
+convert ./graphics/plot_region_and_boundary_condition_fmt.png -resize 800x800 ./graphics/plot_region_and_boundary_condition_fmt.png
+
+convert ./graphics/plot_few_bm_paths.png -crop 8000x8000+4500+2000 ./graphics/plot_few_bm_paths_fmt.png
+convert ./graphics/plot_few_bm_paths_fmt.png -resize 800x800 ./graphics/plot_few_bm_paths_fmt.png
+
+convert ./graphics/A.png -crop 8000x8000+4500+2000 ./graphics/A_fmt.png
+convert ./graphics/A_fmt.png -resize 800x800 ./graphics/A_fmt.png
+
+convert ./graphics/A.png -crop 8000x8000+4500+2000 ./graphics/A_fmt.png
+convert ./graphics/A_fmt.png -resize 800x800 ./graphics/A_fmt.png
+
+convert ./graphics/A.png -crop 8000x8000+4500+2000 ./graphics/A_fmt.png
+convert ./graphics/A_fmt.png -resize 800x800 ./graphics/A_fmt.png
+
+convert ./graphics/A.png -crop 8000x8000+4500+2000 ./graphics/A_fmt.png
+convert ./graphics/A_fmt.png -resize 800x800 ./graphics/A_fmt.png
