@@ -8,9 +8,9 @@ from matplotlib.colors import Normalize
 
 # draw a region
 
-def get_circle(center, radius, num_samples):
+def get_circle(center, radius, n_draw_samples):
 
-    thetas = np.linspace(0, 2*np.pi, num=num_samples, endpoint=True)
+    thetas = np.linspace(0, 2*np.pi, num=n_draw_samples, endpoint=True)
 
     xs = radius*np.cos(thetas) + center[0]
     ys = radius*np.sin(thetas) + center[1]
@@ -20,10 +20,10 @@ def get_circle(center, radius, num_samples):
     return circle_coords
 
 
-def get_offset_circles(center1, center2, radius1, radius2, num_samples):
+def get_offset_circles(center1, center2, radius1, radius2, n_draw_samples):
 
-    circle1_coords = get_circle(center1, radius1, num_samples)
-    circle2_coords = get_circle(center2, radius2, num_samples)
+    circle1_coords = get_circle(center1, radius1, n_draw_samples)
+    circle2_coords = get_circle(center2, radius2, n_draw_samples)
 
     circle2_coords = np.flipud(circle2_coords)
 
@@ -32,9 +32,9 @@ def get_offset_circles(center1, center2, radius1, radius2, num_samples):
     return offset_circles_coords
 
 
-def get_region_boundary(num_samples):
+def get_region_boundary(num_draw_samples):
 
-    offset_circles_coords = get_offset_circles((1,0),(0,0),5,2,num_samples)
+    offset_circles_coords = get_offset_circles((1,0),(0,0),5,2,num_draw_samples)
 
     return offset_circles_coords
 
@@ -95,6 +95,8 @@ def inside_U(xy):
 
 def terminal_value(bm_2d):
 
+    # TODO remove
+
     terminal_point = bm_2d[-1]
     terminal_val = phi(terminal_point)
 
@@ -152,7 +154,17 @@ def stop_many_2d_bms(many_2d_bms):
     return many_stopped_2d_bms
 
 
+def terminal_values_stopped_bms(many_stopped_2d_bms):
+
+    term_vals = apply_to_coords(many_stopped_2d_bms[:,-1,:], phi)
+
+    return term_vals
+
+
+
 def simulate_many_bms(xy, M, T, num_samples):
+
+    # TODO remove
 
     values = M*[None]
 
@@ -166,23 +178,24 @@ def simulate_many_bms(xy, M, T, num_samples):
     return mean_value
 
 
-def make_final_surface(M, T, num_samples, fidelity):
+def make_final_surface(n_monte_carlo, timestep, fidelity, total_time):
 
     x_scope = np.arange(-4,6, fidelity)
     y_scope = np.arange(-5,5, fidelity)
-    mesh = product(x_scope, y_scope)
+    xys = n_monte_carlo * list(product(x_scope, y_scope))
+    xys = [item for item in xys if inside_U(item)]
 
-    surface = []
+    many_2d_bms = sim_many_2d_bms(xys, timestep, total_time)
+    many_stopped_2d_bms = stop_many_2d_bms(many_2d_bms)
+    terminal_values = terminal_values_stopped_bms(many_stopped_2d_bms)
 
-    n_iters = len(x_scope) * len(y_scope)
-    i = 1
+    n_iters = len(xys)
+    surface_raw = np.zeros(shape=(n_iters,3))
+    surface_raw[:,0:2] = xys
+    surface_raw[:,2] = terminal_values.reshape(-1)
 
-    for xy in mesh:
-        print("make_final_surface: {}/{}".format(i, n_iters))
-        i = i+1
-        if inside_U(xy):
-            f_xy = simulate_many_bms(xy, M, T, num_samples)
-            surface.append([xy[0], xy[1], f_xy])
+    surface = surface_raw.reshape(n_monte_carlo,-1,3)
+    surface = np.apply_along_axis(sum, 0, surface) / n_monte_carlo
 
     return surface
 
@@ -325,17 +338,17 @@ def plot_few_bm_paths():
 
 def plot_final_surface():
 
-    M = 10
-    T = 50
-    num_samples = 100
-    fidelity = 0.2
+    n_monte_carlo = 10
+    timestep = 1
+    fidelity = 0.1
+    total_time = 100
+    n_draw_samples = 100
 
     np.random.seed(seed=2)
 
-    surface = make_final_surface(M, T, num_samples, fidelity)
-    surface = np.array(surface)
+    surface = make_final_surface(n_monte_carlo, timestep, fidelity, total_time)
 
-    boundary_coords = get_region_boundary(num_samples)
+    boundary_coords = get_region_boundary(n_draw_samples)
     boundary_values = apply_to_coords(boundary_coords, phi)
 
     # set up plot
@@ -346,16 +359,16 @@ def plot_final_surface():
     ax.add_collection3d(plt.fill_between(boundary_coords[:,0], boundary_coords[:,1], 0, color='lightsteelblue', linewidth=0))
 
     # vertical shading
-    #ax.add_collection3d(data_to_polygon(boundary_coords[0:num_samples,:], boundary_values[0:num_samples], 0, 'r', 0.5))
-    #ax.add_collection3d(data_to_polygon(boundary_coords[num_samples:,:], boundary_values[num_samples:,:], 0, 'r', 0.5))
+    #ax.add_collection3d(data_to_polygon(boundary_coords[0:n_draw_samples,:], boundary_values[0:n_draw_samples], 0, 'r', 0.5))
+    #ax.add_collection3d(data_to_polygon(boundary_coords[n_draw_samples:,:], boundary_values[n_draw_samples:,:], 0, 'r', 0.5))
 
     # region boundary
-    ax.plot(xs=boundary_coords[0:num_samples,0], ys=boundary_coords[0:num_samples,1], zs=0, color='slateblue', linewidth=2, zorder=4)
-    ax.plot(xs=boundary_coords[num_samples:,0], ys=boundary_coords[num_samples:,1], zs=0, color='slateblue', linewidth=2, zorder=4)
+    ax.plot(xs=boundary_coords[0:n_draw_samples,0], ys=boundary_coords[0:n_draw_samples,1], zs=0, color='slateblue', linewidth=2, zorder=4)
+    ax.plot(xs=boundary_coords[n_draw_samples:,0], ys=boundary_coords[n_draw_samples:,1], zs=0, color='slateblue', linewidth=2, zorder=4)
 
     # phi values
-    ax.plot(xs=boundary_coords[0:num_samples,0], ys=boundary_coords[0:num_samples,1], zs=boundary_values[0:num_samples,0], color='r', linewidth=2, zorder=5)
-    ax.plot(xs=boundary_coords[num_samples:,0], ys=boundary_coords[num_samples:,1], zs=boundary_values[num_samples:,0], color='r', linewidth=2, zorder=5)
+    ax.plot(xs=boundary_coords[0:n_draw_samples,0], ys=boundary_coords[0:n_draw_samples,1], zs=boundary_values[0:n_draw_samples,0], color='r', linewidth=2, zorder=5)
+    ax.plot(xs=boundary_coords[n_draw_samples:,0], ys=boundary_coords[n_draw_samples:,1], zs=boundary_values[n_draw_samples:,0], color='r', linewidth=2, zorder=5)
 
     # surface
     cmap = cm.autumn
