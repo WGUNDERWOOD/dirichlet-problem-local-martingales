@@ -3,6 +3,8 @@ import matplotlib.pyplot as plt
 from itertools import product
 from mpl_toolkits.mplot3d import Axes3D
 from mpl_toolkits.mplot3d.art3d import Poly3DCollection
+import matplotlib.cm as cm
+from matplotlib.colors import Normalize
 
 # draw a region
 
@@ -126,7 +128,7 @@ def up_to_escape(bm_2d):
     still_in_U = np.apply_along_axis(inside_U, 1, bm_2d)
 
     last_time_before_escape = list(still_in_U).index(False)
-    bm_up_to_escape = bm_2d[0:(last_time_before_escape)]
+    bm_up_to_escape = bm_2d[0:(last_time_before_escape + 1)]
 
     return bm_up_to_escape
 
@@ -143,6 +145,22 @@ def simulate_many_bms(xy, M, T, num_samples):
     mean_value = np.mean(values)
 
     return mean_value
+
+
+def make_final_surface(M, T, num_samples, fidelity):
+
+    x_scope = np.arange(-4,6, fidelity)
+    y_scope = np.arange(-5,5, fidelity)
+    mesh = product(x_scope, y_scope)
+
+    surface = []
+
+    for xy in mesh:
+        if inside_U(xy):
+            f_xy = simulate_many_bms(xy, M, T, num_samples)
+            surface.append([xy[0], xy[1], f_xy])
+
+    return surface
 
 
 
@@ -284,17 +302,53 @@ def plot_few_bm_paths():
 def plot_final_surface():
 
     M = 10
-    T = 20
-    num_samples = 1000
+    T = 50
+    num_samples = 100
+    fidelity = 0.1
 
-    x_scope = range(-5,5)
-    y_scope = range(-5,5)
+    surface = make_final_surface(M, T, num_samples, fidelity)
+    surface = np.array(surface)
 
-    mesh = product(x_scope, y_scope)
+    boundary_coords = get_region_boundary(num_samples)
+    boundary_values = apply_to_coords(boundary_coords, phi)
 
-    for xy in mesh:
-        print(xy)
+    # set up plot
+    fig = plt.figure(figsize=(5,3))
+    ax = fig.add_subplot(111, projection='3d')
 
-#    f_xy = simulate_many_bms(xy, M, T, num_samples)
+    # region
+    ax.add_collection3d(plt.fill_between(boundary_coords[:,0], boundary_coords[:,1], 0, color='lightsteelblue', linewidth=0))
 
-    print(f_xy)
+    # vertical shading
+    #ax.add_collection3d(data_to_polygon(boundary_coords[0:num_samples,:], boundary_values[0:num_samples], 0, 'r', 0.5))
+    #ax.add_collection3d(data_to_polygon(boundary_coords[num_samples:,:], boundary_values[num_samples:,:], 0, 'r', 0.5))
+
+    # region boundary
+    ax.plot(xs=boundary_coords[0:num_samples,0], ys=boundary_coords[0:num_samples,1], zs=0, color='slateblue', linewidth=2, zorder=4)
+    ax.plot(xs=boundary_coords[num_samples:,0], ys=boundary_coords[num_samples:,1], zs=0, color='slateblue', linewidth=2, zorder=4)
+
+    # phi values
+    ax.plot(xs=boundary_coords[0:num_samples,0], ys=boundary_coords[0:num_samples,1], zs=boundary_values[0:num_samples,0], color='r', linewidth=2, zorder=5)
+    ax.plot(xs=boundary_coords[num_samples:,0], ys=boundary_coords[num_samples:,1], zs=boundary_values[num_samples:,0], color='r', linewidth=2, zorder=5)
+
+    # surface
+    cmap = cm.autumn
+    norm = Normalize(vmin=min(surface[:,2]), vmax=max(surface[:,2]))
+    cols = cmap(norm(surface[:,2]))
+    ax.scatter(surface[:,0], surface[:,1], surface[:,2], linewidths=0, zorder=7, color=cols, s=0.5)
+
+    # text
+    ax.text(x=3.8, y=0, z=0, s='$U$', fontsize=20, zorder=6)
+    ax.text(x=2, y=-5.7, z=0, s='$\partial U$', fontsize=20, zorder=6)
+    ax.text(x=-3, y=7.5, z=0, s='$\phi(\partial U)$', fontsize=20, zorder=6)
+
+    # axis limits
+    ax.set_xlim([-4,6])
+    ax.set_ylim([-5,5])
+    ax.set_zlim([0,40])
+    plt.axis('off')
+
+    # viewpoint
+    ax.view_init(elev=60, azim=250)
+
+    plt.savefig("./graphics/plot_final_surface.png", dpi=1000)
