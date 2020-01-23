@@ -78,7 +78,29 @@ def data_to_polygon(boundary_coords, boundary_values, ref_height, color, alpha):
 
 # simulate BM
 
+def escape_time(logical_points):
+
+    x = list(logical_points)
+    if False in x:
+        return x.index(False)
+
+    else:
+        return 0
+
+
+def stop_at_time(points, stop_time):
+
+    time = int(stop_time)
+    stopped_points = np.zeros_like(points)
+    stopped_points[0:time] = points[0:time]
+    stopped_points[time:] = points[time]
+
+    return stopped_points
+
+
 def inside_U(xy):
+
+    # TODO remove maybe
 
     x = xy[0]
     y = xy[1]
@@ -91,29 +113,6 @@ def inside_U(xy):
 
     else:
         return True
-
-
-def terminal_value(bm_2d):
-
-    # TODO remove
-
-    terminal_point = bm_2d[-1]
-    terminal_val = phi(terminal_point)
-
-    return terminal_val
-
-
-def up_to_escape(bm_2d):
-
-    # TODO remove
-
-    still_in_U = np.apply_along_axis(inside_U, 1, bm_2d)
-
-    last_time_before_escape = list(still_in_U).index(False)
-    stopped_2d_bm = bm_2d
-    stopped_2d_bm[(last_time_before_escape+1):] = bm_2d[last_time_before_escape]
-
-    return stopped_2d_bm
 
 
 def sim_many_2d_bms(xys, timestep, total_time):
@@ -133,6 +132,29 @@ def sim_many_2d_bms(xys, timestep, total_time):
     return many_2d_bms
 
 
+def stop_many_2d_bms(many_2d_bms):
+
+    xs = many_2d_bms[:,:,0]
+    ys = many_2d_bms[:,:,1]
+
+    check_1 = ((xs-1)**2 + ys**2 < 25)
+    check_2 = (xs**2 + ys**2 > 4)
+    points_inside = np.logical_and(check_1, check_2)
+
+    escape_times = np.apply_along_axis(escape_time, 1, points_inside).reshape(-1,1,1)
+    reshaped_times = np.concatenate((escape_times, escape_times), axis=2)
+    bms_and_times = np.concatenate((many_2d_bms, reshaped_times), axis=1)
+
+    many_stopped_bms_x = np.apply_along_axis(lambda x: stop_at_time(x[:-1], x[-1]), 1, bms_and_times[:,:,0])
+    many_stopped_bms_y = np.apply_along_axis(lambda x: stop_at_time(x[:-1], x[-1]), 1, bms_and_times[:,:,1])
+
+    many_stopped_bms_x = many_stopped_bms_x.reshape((len(xs),-1,1))
+    many_stopped_bms_y = many_stopped_bms_y.reshape((len(xs),-1,1))
+    many_stopped_bms = np.concatenate((many_stopped_bms_x, many_stopped_bms_y), 2)
+
+    return many_stopped_bms
+
+
 def stop_2d_bm(bm_2d):
 
     still_in_U = np.apply_along_axis(inside_U, 1, bm_2d)
@@ -144,14 +166,16 @@ def stop_2d_bm(bm_2d):
     return stopped_2d_bm
 
 
-def stop_many_2d_bms(many_2d_bms):
-
-    many_stopped_2d_bms = 0 * many_2d_bms
-
-    for i in range(len(many_2d_bms)):
-        many_stopped_2d_bms[i] = stop_2d_bm(many_2d_bms[i])
-
-    return many_stopped_2d_bms
+#def stop_many_2d_bms(many_2d_bms):
+#
+#    many_stopped_2d_bms = np.zeros_like(many_2d_bms)
+#    n_iter = len(many_2d_bms)
+#
+#    for i in range(n_iter):
+#        print("{}/{}".format(i+1, n_iter))
+#        many_stopped_2d_bms[i] = stop_2d_bm(many_2d_bms[i])
+#
+#    return many_stopped_2d_bms
 
 
 def terminal_values_stopped_bms(many_stopped_2d_bms):
@@ -159,23 +183,6 @@ def terminal_values_stopped_bms(many_stopped_2d_bms):
     term_vals = apply_to_coords(many_stopped_2d_bms[:,-1,:], phi)
 
     return term_vals
-
-
-
-def simulate_many_bms(xy, M, T, num_samples):
-
-    # TODO remove
-
-    values = M*[None]
-
-    for m in range(M):
-        bm = sim_2d_bm(xy, T, num_samples)
-        escape_value = terminal_value(up_to_escape(bm))
-        values[m] = escape_value
-
-    mean_value = np.mean(values)
-
-    return mean_value
 
 
 def make_final_surface(n_monte_carlo, timestep, fidelity, total_time):
@@ -205,11 +212,10 @@ def make_final_surface(n_monte_carlo, timestep, fidelity, total_time):
 
 # plots
 
-def plot_region():
+def plot_region(n_draw_samples, dpi):
 
     # get data
-    num_samples = 50
-    boundary_coords = get_region_boundary(num_samples)
+    boundary_coords = get_region_boundary(n_draw_samples)
 
     # set up plot
     fig = plt.figure(figsize=(5, 5))
@@ -219,42 +225,41 @@ def plot_region():
     plt.fill_between(boundary_coords[:,0], boundary_coords[:,1], linewidth=0, color='lightsteelblue')
 
     # boundary
-    ax.plot(boundary_coords[0:num_samples,0], boundary_coords[0:num_samples,1], color='slateblue', linewidth=2, zorder=2)
-    ax.plot(boundary_coords[num_samples:,0], boundary_coords[num_samples:,1], color='slateblue', linewidth=2, zorder=2)
+    ax.scatter(boundary_coords[:,0], boundary_coords[:,1], color='slateblue', linewidth=0, s=5, zorder=4, alpha=1)
 
     # text
-    ax.text(x=3.8, y=0, s='$U$', fontsize=20, zorder=6)
-    ax.text(x=2, y=-5.7, s='$\partial U$', fontsize=20, zorder=6)
+    ax.text(x=3.8, y=-0.3, s='$U$', fontsize=20, zorder=6)
+    ax.text(x=4, y=-5, s='$\partial U$', fontsize=20, zorder=6)
 
     # save
     plt.axis('off')
-    plt.savefig("./graphics/plot_region.png")
+    plt.savefig("./graphics/plot_region.png", dpi=dpi)
 
 
-def plot_region_and_boundary_condition():
+def plot_region_and_boundary_condition(n_draw_samples, dpi):
 
-    num_samples = 50
-    boundary_coords = get_region_boundary(num_samples)
+    boundary_coords = get_region_boundary(n_draw_samples)
     boundary_values = apply_to_coords(boundary_coords, phi)
 
     # set up plot
-    fig = plt.figure(figsize=(5,3))
+    fig = plt.figure(figsize=(8,6))
     ax = fig.add_subplot(111, projection='3d')
 
     # region
-    ax.add_collection3d(plt.fill_between(boundary_coords[:,0], boundary_coords[:,1], 0, color='lightsteelblue', linewidth=0))
-
-    # vertical shading
-    ax.add_collection3d(data_to_polygon(boundary_coords[0:num_samples,:], boundary_values[0:num_samples], 0, 'r', 0.5))
-    ax.add_collection3d(data_to_polygon(boundary_coords[num_samples:,:], boundary_values[num_samples:,:], 0, 'r', 0.5))
+    ax.add_collection3d(plt.fill_between(boundary_coords[:,0], boundary_coords[:,1], 0, color='lightsteelblue', linewidth=0, zorder=0))
 
     # region boundary
-    ax.plot(xs=boundary_coords[0:num_samples,0], ys=boundary_coords[0:num_samples,1], zs=0, color='slateblue', linewidth=2, zorder=4)
-    ax.plot(xs=boundary_coords[num_samples:,0], ys=boundary_coords[num_samples:,1], zs=0, color='slateblue', linewidth=2, zorder=4)
+    ax.scatter(boundary_coords[:,0], boundary_coords[:,1], color='slateblue', linewidth=0, s=5, zorder=4, alpha=1)
 
     # phi values
-    ax.plot(xs=boundary_coords[0:num_samples,0], ys=boundary_coords[0:num_samples,1], zs=boundary_values[0:num_samples,0], color='r', linewidth=2, zorder=5)
-    ax.plot(xs=boundary_coords[num_samples:,0], ys=boundary_coords[num_samples:,1], zs=boundary_values[num_samples:,0], color='r', linewidth=2, zorder=5)
+    cmap = cm.rainbow
+    norm = Normalize(vmin=min(boundary_values), vmax=max(boundary_values))
+    cols = cmap(norm(boundary_values[:,0]))
+    ax.scatter(boundary_coords[:,0], boundary_coords[:,1], zs=boundary_values, linewidths=0, s=8, color=cols, zorder=5)
+
+    # vertical shading
+    ax.add_collection3d(data_to_polygon(boundary_coords[0:n_draw_samples,:], boundary_values[0:n_draw_samples], 0, 'k', alpha=0.1))
+    ax.add_collection3d(data_to_polygon(boundary_coords[n_draw_samples:,:], boundary_values[n_draw_samples:,:], 0, 'k', alpha=0.1))
 
     # text
     ax.text(x=3.8, y=0, z=0, s='$U$', fontsize=20, zorder=6)
@@ -270,57 +275,64 @@ def plot_region_and_boundary_condition():
     # viewpoint
     ax.view_init(elev=60, azim=250)
 
-    plt.savefig("./graphics/plot_region_and_boundary_condition.png")
+    plt.savefig("./graphics/plot_region_and_boundary_condition.png", dpi=dpi)
 
     return
 
 
-def plot_few_bm_paths():
+def plot_few_bm_paths(n_draw_samples, timestep, total_time, dpi):
 
     # get data
-    num_samples = 10000
-    boundary_coords = get_region_boundary(num_samples)
+    boundary_coords = get_region_boundary(n_draw_samples)
     boundary_values = apply_to_coords(boundary_coords, phi)
-    x = (3,0)
-    T = 20
 
     # set up plot
-    fig = plt.figure(figsize=(5,3))
+    fig = plt.figure(figsize=(8,6))
     ax = fig.add_subplot(111, projection='3d')
 
     # region
     ax.add_collection3d(plt.fill_between(boundary_coords[:,0], boundary_coords[:,1], 0, color='lightsteelblue', linewidth=0))
 
     # vertical shading
-    ax.add_collection3d(data_to_polygon(boundary_coords[0:num_samples,:], boundary_values[0:num_samples], 0, 'r', 0.5))
-    ax.add_collection3d(data_to_polygon(boundary_coords[num_samples:,:], boundary_values[num_samples:,:], 0, 'r', 0.5))
+    ax.add_collection3d(data_to_polygon(boundary_coords[0:n_draw_samples,:], boundary_values[0:n_draw_samples], 0, 'k', alpha = 0.1))
+    ax.add_collection3d(data_to_polygon(boundary_coords[n_draw_samples:,:], boundary_values[n_draw_samples:,:], 0, 'k', alpha = 0.1))
 
     # region boundary
-    ax.plot(xs=boundary_coords[0:num_samples,0], ys=boundary_coords[0:num_samples,1], zs=0, color='slateblue', linewidth=2, zorder=4)
-    ax.plot(xs=boundary_coords[num_samples:,0], ys=boundary_coords[num_samples:,1], zs=0, color='slateblue', linewidth=2, zorder=4)
+    ax.scatter(boundary_coords[:,0], boundary_coords[:,1], color='slateblue', linewidth=0, s=5, zorder=4, alpha=1)
 
     # phi values
-    ax.plot(xs=boundary_coords[0:num_samples,0], ys=boundary_coords[0:num_samples,1], zs=boundary_values[0:num_samples,0], color='r', linewidth=2, zorder=5)
-    ax.plot(xs=boundary_coords[num_samples:,0], ys=boundary_coords[num_samples:,1], zs=boundary_values[num_samples:,0], color='r', linewidth=2, zorder=7)
+    cmap = cm.rainbow
+    norm = Normalize(vmin=min(boundary_values), vmax=max(boundary_values))
+    cols = cmap(norm(boundary_values[:,0]))
+    ax.scatter(boundary_coords[:,0], boundary_coords[:,1], zs=boundary_values, linewidths=0, s=8, color=cols, zorder=5)
 
     # start value
-    ax.plot([x[0]], [x[1]], 'ko', zorder=8, markersize=3)
+    xy = [3,0]
+    ax.plot([xy[0]], [xy[1]], 'ko', zorder=8, markersize=3)
 
     # BMs
-    np.random.seed(seed=2)
-    for i in range(3):
-        col = ['brown','red','green'][i]
-        bm = up_to_escape(sim_2d_bm(x, T, num_samples))
-        xs = 2 * [bm[-1,0]]
-        ys = 2 * [bm[-1,1]]
-        zs = [0, terminal_value(bm)]
-        ax.plot(xs, ys, zs, '-o', markersize=3, zorder=8, linewidth=1, color=col)
-        ax.plot(bm[:,0], bm[:,1], zorder=6, linewidth=0.5, color=col)
+    np.random.seed(seed=1)
+    n_paths = 2
+
+    xys = n_paths * [xy]
+    bms = sim_many_2d_bms(xys, timestep, total_time)
+    stopped_bms = stop_many_2d_bms(bms)
+    terminal_xys = stopped_bms[:,-1,:]
+    terminal_values = terminal_values_stopped_bms(stopped_bms)
+
+    for i in range(n_paths):
+        col = ['red','green'][i]
+
+        # terminal values
+        ax.plot(2*[terminal_xys[i,0]], 2*[terminal_xys[i,1]], [0, terminal_values[i]], '-o', markersize=5, zorder=8, linewidth=2, color=col)
+
+        # bm paths
+        ax.plot(stopped_bms[i,:,0], stopped_bms[i,:,1], zorder=6, linewidth=0.5, color=col)
 
     # text
-    ax.text(x=3.8, y=0, z=0, s='$U$', fontsize=20, zorder=6)
-    ax.text(x=2, y=-5.7, z=0, s='$\partial U$', fontsize=20, zorder=6)
-    ax.text(x=-3, y=7.5, z=0, s='$\phi(\partial U)$', fontsize=20, zorder=6)
+    #ax.text(x=3.8, y=0, z=0, s='$U$', fontsize=20, zorder=6)
+    #ax.text(x=2, y=-5.7, z=0, s='$\partial U$', fontsize=20, zorder=6)
+    #ax.text(x=-3, y=7.5, z=0, s='$\phi(\partial U)$', fontsize=20, zorder=6)
 
     # axis limits
     ax.set_xlim([-4,6])
@@ -336,13 +348,7 @@ def plot_few_bm_paths():
     return
 
 
-def plot_final_surface():
-
-    n_monte_carlo = 10
-    timestep = 1
-    fidelity = 0.1
-    total_time = 100
-    n_draw_samples = 100
+def plot_final_surface(n_monte_carlo, timestep, fidelity, total_time, n_draw_samples, dpi):
 
     np.random.seed(seed=2)
 
@@ -352,34 +358,35 @@ def plot_final_surface():
     boundary_values = apply_to_coords(boundary_coords, phi)
 
     # set up plot
-    fig = plt.figure(figsize=(5,3))
+    fig = plt.figure(figsize=(8,6))
     ax = fig.add_subplot(111, projection='3d')
 
     # region
     ax.add_collection3d(plt.fill_between(boundary_coords[:,0], boundary_coords[:,1], 0, color='lightsteelblue', linewidth=0))
 
     # vertical shading
-    #ax.add_collection3d(data_to_polygon(boundary_coords[0:n_draw_samples,:], boundary_values[0:n_draw_samples], 0, 'r', 0.5))
-    #ax.add_collection3d(data_to_polygon(boundary_coords[n_draw_samples:,:], boundary_values[n_draw_samples:,:], 0, 'r', 0.5))
+    ax.add_collection3d(data_to_polygon(boundary_coords[0:n_draw_samples,:], boundary_values[0:n_draw_samples], 0, 'k', alpha = 0.1))
+    ax.add_collection3d(data_to_polygon(boundary_coords[n_draw_samples:,:], boundary_values[n_draw_samples:,:], 0, 'k', alpha = 0.1))
 
     # region boundary
-    ax.plot(xs=boundary_coords[0:n_draw_samples,0], ys=boundary_coords[0:n_draw_samples,1], zs=0, color='slateblue', linewidth=2, zorder=4)
-    ax.plot(xs=boundary_coords[n_draw_samples:,0], ys=boundary_coords[n_draw_samples:,1], zs=0, color='slateblue', linewidth=2, zorder=4)
+    ax.scatter(boundary_coords[:,0], boundary_coords[:,1], color='slateblue', linewidth=0, s=5, zorder=4, alpha=1)
 
     # phi values
-    ax.plot(xs=boundary_coords[0:n_draw_samples,0], ys=boundary_coords[0:n_draw_samples,1], zs=boundary_values[0:n_draw_samples,0], color='r', linewidth=2, zorder=5)
-    ax.plot(xs=boundary_coords[n_draw_samples:,0], ys=boundary_coords[n_draw_samples:,1], zs=boundary_values[n_draw_samples:,0], color='r', linewidth=2, zorder=5)
+    cmap = cm.rainbow
+    norm = Normalize(vmin=min(boundary_values), vmax=max(boundary_values))
+    cols = cmap(norm(boundary_values[:,0]))
+    ax.scatter(boundary_coords[:,0], boundary_coords[:,1], zs=boundary_values, linewidths=0, s=8, color=cols, zorder=5)
 
     # surface
-    cmap = cm.autumn
+    cmap = cm.rainbow
     norm = Normalize(vmin=min(surface[:,2]), vmax=max(surface[:,2]))
     cols = cmap(norm(surface[:,2]))
-    ax.scatter(surface[:,0], surface[:,1], surface[:,2], linewidths=0, zorder=7, color=cols, s=2)
+    ax.scatter(surface[:,0], surface[:,1], surface[:,2], linewidths=0, zorder=7, color=cols, s=5, alpha=1)
 
     # text
-    ax.text(x=3.8, y=0, z=0, s='$U$', fontsize=20, zorder=6)
-    ax.text(x=2, y=-5.7, z=0, s='$\partial U$', fontsize=20, zorder=6)
-    ax.text(x=-3, y=7.5, z=0, s='$\phi(\partial U)$', fontsize=20, zorder=6)
+    #ax.text(x=3.8, y=0, z=0, s='$U$', fontsize=20, zorder=6)
+    #ax.text(x=2, y=-5.7, z=0, s='$\partial U$', fontsize=20, zorder=6)
+    #ax.text(x=-3, y=7.5, z=0, s='$\phi(\partial U)$', fontsize=20, zorder=6)
 
     # axis limits
     ax.set_xlim([-4,6])
@@ -390,4 +397,4 @@ def plot_final_surface():
     # viewpoint
     ax.view_init(elev=60, azim=250)
 
-    plt.savefig("./graphics/plot_final_surface.png", dpi=1000)
+    plt.savefig("./graphics/plot_final_surface.png", dpi=dpi)
