@@ -80,9 +80,10 @@ def data_to_polygon(boundary_coords, boundary_values, ref_height, color, alpha):
 
 def escape_time(logical_points):
 
-    x = list(logical_points)
-    if False in x:
-        return x.index(False)
+    logical_points_list = list(logical_points)
+
+    if False in logical_points_list:
+        return logical_points_list.index(False)
 
     else:
         return 0
@@ -100,8 +101,6 @@ def stop_at_time(points, stop_time):
 
 def inside_U(xy):
 
-    # TODO remove maybe
-
     x = xy[0]
     y = xy[1]
 
@@ -115,7 +114,7 @@ def inside_U(xy):
         return True
 
 
-def sim_many_2d_bms(xys, timestep, total_time):
+def sim_bms(xys, timestep, total_time):
 
     # dim 0: which starting point
     # dim 1: which time step
@@ -127,15 +126,15 @@ def sim_many_2d_bms(xys, timestep, total_time):
 
     normal_array = np.random.normal(loc=0, scale=sd, size=(n_starts, n_steps, 2))
     normal_array[:,0,:] = xys
-    many_2d_bms = np.cumsum(normal_array, axis=1)
+    bms = np.cumsum(normal_array, axis=1)
 
-    return many_2d_bms
+    return bms
 
 
-def stop_many_2d_bms(many_2d_bms):
+def stop_bms(bms):
 
-    xs = many_2d_bms[:,:,0]
-    ys = many_2d_bms[:,:,1]
+    xs = bms[:,:,0]
+    ys = bms[:,:,1]
 
     check_1 = ((xs-1)**2 + ys**2 < 25)
     check_2 = (xs**2 + ys**2 > 4)
@@ -143,16 +142,16 @@ def stop_many_2d_bms(many_2d_bms):
 
     escape_times = np.apply_along_axis(escape_time, 1, points_inside).reshape(-1,1,1)
     reshaped_times = np.concatenate((escape_times, escape_times), axis=2)
-    bms_and_times = np.concatenate((many_2d_bms, reshaped_times), axis=1)
+    bms_and_times = np.concatenate((bms, reshaped_times), axis=1)
 
-    many_stopped_bms_x = np.apply_along_axis(lambda x: stop_at_time(x[:-1], x[-1]), 1, bms_and_times[:,:,0])
-    many_stopped_bms_y = np.apply_along_axis(lambda x: stop_at_time(x[:-1], x[-1]), 1, bms_and_times[:,:,1])
+    stopped_bms_x = np.apply_along_axis(lambda x: stop_at_time(x[:-1], x[-1]), 1, bms_and_times[:,:,0])
+    stopped_bms_y = np.apply_along_axis(lambda x: stop_at_time(x[:-1], x[-1]), 1, bms_and_times[:,:,1])
 
-    many_stopped_bms_x = many_stopped_bms_x.reshape((len(xs),-1,1))
-    many_stopped_bms_y = many_stopped_bms_y.reshape((len(xs),-1,1))
-    many_stopped_bms = np.concatenate((many_stopped_bms_x, many_stopped_bms_y), 2)
+    stopped_bms_x = stopped_bms_x.reshape((len(xs),-1,1))
+    stopped_bms_y = stopped_bms_y.reshape((len(xs),-1,1))
+    stopped_bms = np.concatenate((stopped_bms_x, stopped_bms_y), 2)
 
-    return many_stopped_bms
+    return stopped_bms
 
 
 def stop_2d_bm(bm_2d):
@@ -166,21 +165,21 @@ def stop_2d_bm(bm_2d):
     return stopped_2d_bm
 
 
-#def stop_many_2d_bms(many_2d_bms):
+#def stop_bms(bms):
 #
-#    many_stopped_2d_bms = np.zeros_like(many_2d_bms)
-#    n_iter = len(many_2d_bms)
+#    stopped_bms = np.zeros_like(bms)
+#    n_iter = len(bms)
 #
 #    for i in range(n_iter):
 #        print("{}/{}".format(i+1, n_iter))
-#        many_stopped_2d_bms[i] = stop_2d_bm(many_2d_bms[i])
+#        stopped_bms[i] = stop_2d_bm(bms[i])
 #
-#    return many_stopped_2d_bms
+#    return stopped_bms
 
 
-def terminal_values_stopped_bms(many_stopped_2d_bms):
+def terminal_values_stopped_bms(stopped_bms):
 
-    term_vals = apply_to_coords(many_stopped_2d_bms[:,-1,:], phi)
+    term_vals = apply_to_coords(stopped_bms[:,-1,:], phi)
 
     return term_vals
 
@@ -192,9 +191,9 @@ def make_final_surface(n_monte_carlo, timestep, fidelity, total_time):
     xys = n_monte_carlo * list(product(x_scope, y_scope))
     xys = [item for item in xys if inside_U(item)]
 
-    many_2d_bms = sim_many_2d_bms(xys, timestep, total_time)
-    many_stopped_2d_bms = stop_many_2d_bms(many_2d_bms)
-    terminal_values = terminal_values_stopped_bms(many_stopped_2d_bms)
+    bms = sim_bms(xys, timestep, total_time)
+    stopped_bms = stop_bms(bms)
+    terminal_values = terminal_values_stopped_bms(stopped_bms)
 
     n_iters = len(xys)
     surface_raw = np.zeros(shape=(n_iters,3))
@@ -315,8 +314,8 @@ def plot_few_bm_paths(n_draw_samples, timestep, total_time, dpi):
     n_paths = 2
 
     xys = n_paths * [xy]
-    bms = sim_many_2d_bms(xys, timestep, total_time)
-    stopped_bms = stop_many_2d_bms(bms)
+    bms = sim_bms(xys, timestep, total_time)
+    stopped_bms = stop_bms(bms)
     terminal_xys = stopped_bms[:,-1,:]
     terminal_values = terminal_values_stopped_bms(stopped_bms)
 
