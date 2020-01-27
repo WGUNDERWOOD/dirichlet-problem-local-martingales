@@ -289,6 +289,52 @@ def plot_region_and_boundary_condition(n_draw_samples, dpi):
     return
 
 
+def plot_flat_bm_paths(n_draw_samples, timestep, total_time, dpi):
+
+
+    '''plot a few bm paths in the region'''
+
+    # get data
+    boundary_coords = get_region_boundary(n_draw_samples)
+
+    # set up plot
+    fig = plt.figure(figsize=(5, 5))
+    ax = fig.add_subplot(111)
+
+    # region
+    plt.fill_between(boundary_coords[:,0], boundary_coords[:,1], linewidth=0, color='lightsteelblue')
+
+    # boundary
+    ax.scatter(boundary_coords[:,0], boundary_coords[:,1], color='slateblue', linewidth=0, s=5, zorder=4, alpha=1)
+
+    # start value
+    xy = [3,0]
+    ax.plot([xy[0]], [xy[1]], 'ko', zorder=8, markersize=3)
+
+    # BMs
+    np.random.seed(seed=1)
+    n_paths = 2
+
+    xys = n_paths * [xy]
+    bms = sim_bms(xys, timestep, total_time)
+    stopped_bms = stop_bms(bms)
+    terminal_xys = stopped_bms[:,-1,:]
+    terminal_values = terminal_values_stopped_bms(stopped_bms)
+
+    for i in range(n_paths):
+        col = ['red','green'][i]
+
+        # terminal values
+        ax.plot(terminal_xys[i,0], terminal_xys[i,1], '-o', markersize=5, zorder=8, linewidth=2, color=col)
+
+        # bm paths
+        ax.plot(stopped_bms[i,:,0], stopped_bms[i,:,1], zorder=6, linewidth=0.5, color=col)
+
+    # save
+    plt.axis('off')
+    plt.savefig("./graphics/plot_flat_bm_paths.png", dpi=dpi)
+
+
 def plot_few_bm_paths(n_draw_samples, timestep, total_time, dpi):
 
     '''plot the region, boundary conditions and some bm sample paths'''

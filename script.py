@@ -10,8 +10,11 @@ dplm.plot_region(n_draw_samples, dpi)
 print("plot region and boundary condition")
 dplm.plot_region_and_boundary_condition(n_draw_samples, dpi)
 
-print("plot few bm paths")
+print("plot flat bm paths")
 timestep = 0.001
+dplm.plot_flat_bm_paths(n_draw_samples, timestep, total_time, dpi)
+
+print("plot few bm paths")
 dplm.plot_few_bm_paths(n_draw_samples, timestep, total_time, dpi)
 
 print("plot final surface")
