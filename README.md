@@ -13,3 +13,7 @@ the Dirichlet problem and continuous local martingales.
 ```
 python3 script.py
 ```
+
+## Output
+
+The plots are exported to [graphics/](./graphics)
