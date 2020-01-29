@@ -14,10 +14,10 @@ print("plot flat bm paths")
 timestep = 0.001
 dplm.plot_flat_bm_paths(n_draw_samples, timestep, total_time, dpi)
 
-print("plot few bm paths")
+print("plot 3D bm paths")
 dplm.plot_few_bm_paths(n_draw_samples, timestep, total_time, dpi)
 
-print("plot final surface")
+print("plot final surfaces")
 timestep = 0.1
 for n_monte_carlo in [1,30]:
     for fidelity in [0.2,0.1]:
