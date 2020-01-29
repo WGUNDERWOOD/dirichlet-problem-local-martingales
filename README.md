@@ -16,4 +16,5 @@ python3 script.py
 
 ## Output
 
-The plots are exported to [graphics/](./graphics)
+The plots are exported to [graphics/](./graphics).
+Note that these files are fairly large.
